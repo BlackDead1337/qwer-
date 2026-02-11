@@ -3,30 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Crash Game</title>
+    <title>Краш Игра</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; background: #0e1621; color: white; text-align: center; margin: 0; padding: 20px; overflow: hidden; }
-        #balance-box { font-size: 1.2rem; margin-bottom: 20px; color: #34b7f1; }
-        #crash-display { font-size: 4rem; font-weight: bold; margin: 50px 0; transition: color 0.2s; }
-        .controls { display: flex; flex-direction: column; gap: 15px; align-items: center; }
-        input { padding: 10px; border-radius: 8px; border: none; width: 80%; font-size: 1rem; }
-        button { padding: 15px 30px; border-radius: 8px; border: none; background: #248bcf; color: white; font-size: 1.2rem; cursor: pointer; width: 80%; }
-        button:disabled { background: #444; }
-        .history { margin-top: 30px; font-size: 0.9rem; opacity: 0.7; }
+        body { font-family: 'Inter', sans-serif; background: #1a1a2e; color: #e0e0e0; text-align: center; margin: 0; padding: 20px; overflow: hidden; display: flex; flex-direction: column; min-height: 100vh; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+        #header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        #balance-box { font-size: 1.2rem; font-weight: bold; color: #64ffda; display: flex; align-items: center; gap: 5px; }
+        #balance-box img { width: 24px; height: 24px; }
+        #history-box { font-size: 0.9rem; color: #888; display: flex; gap: 8px; justify-content: flex-end; }
+        .history-item { padding: 4px 8px; border-radius: 5px; background: #2a2a44; }
+        .win { color: #64ffda; }
+        .loss { color: #ff6b6b; }
+
+        #crash-display { font-size: 5rem; font-weight: bold; margin: 20px 0 10px; color: #ffffff; text-shadow: 0 0 15px rgba(255, 255, 255, 0.5); }
+        .crashed { color: #ff6b6b !important; text-shadow: 0 0 15px rgba(255, 107, 107, 0.7); }
+        .taken { color: #64ffda !important; text-shadow: 0 0 15px rgba(100, 255, 218, 0.7); }
+
+        #game-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; width: 100%; max-width: 600px; margin: 0 auto; }
+        canvas { background: #1a1a2e; border-radius: 15px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3); width: 100%; height: 250px; }
+
+        .controls { display: flex; flex-direction: column; gap: 15px; align-items: center; width: 100%; max-width: 400px; margin-top: 30px; }
+        input[type="number"] { padding: 12px; border-radius: 10px; border: none; width: 100%; font-size: 1.1rem; background: #2a2a44; color: #e0e0e0; text-align: center; box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2); }
+        button { padding: 15px 30px; border-radius: 10px; border: none; background: linear-gradient(45deg, #64ffda, #30c8a3); color: #1a1a2e; font-size: 1.3rem; font-weight: bold; cursor: pointer; width: 100%; transition: all 0.2s ease; box-shadow: 0 4px 15px rgba(100, 255, 218, 0.4); }
+        button:disabled { background: #3a3a5a; color: #888; cursor: not-allowed; box-shadow: none; }
+        button:active { transform: translateY(2px); box-shadow: 0 2px 10px rgba(100, 255, 218, 0.3); }
+
+        #notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.8); color: white; padding: 10px 20px; border-radius: 10px; z-index: 1000; opacity: 0; transition: opacity 0.5s ease; }
+        #notification.show { opacity: 1; }
     </style>
 </head>
 <body>
 
-    <div id="balance-box">Баланс: <span id="balance">Загрузка...</span> 💎</div>
-    <div id="crash-display">x1.00</div>
-
-    <div class="controls">
-        <input type="number" id="bet-input" placeholder="Ваша ставка" value="10">
-        <button id="action-btn">СТАВКА</button>
+    <div id="header">
+        <div id="balance-box">
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iIzY0ZmZkYSIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTAgMThoNGw0LTExaC00bC00IDExem01LTExaDd2LTJoLTlseS0yIDVoLTlsLTItNWgtOXYyaDdMMTAgMTZoLTJsLTIgNWgtMnYySDR2LTJMMiA4aDlMMTAgNmgtNGwtMiA1aC00VjVoMjR2Mmgxem0tMS41LTNoLTQuNTI4TTE3LjUgNWgyLjUzem0tNC4wMiA1aC01Ljk2eiIvPjwvc3ZnPg==" alt="Diamond">
+            <span id="balance">Загрузка...</span>
+        </div>
+        <div id="history-box">
+            <span>Последние:</span>
+            </div>
     </div>
 
-    <div class="history" id="history">Последние игры: -</div>
+    <div id="game-area">
+        <div id="crash-display">x1.00</div>
+        <canvas id="crash-chart"></canvas>
+    </div>
+
+    <div class="controls">
+        <input type="number" id="bet-input" placeholder="Ваша ставка" value="10" min="1">
+        <button id="action-btn">ПОСТАВИТЬ</button>
+    </div>
+
+    <div id="notification"></div>
 
     <script>
         const tg = window.Telegram.WebApp;
@@ -38,27 +68,70 @@
         let currentMultiplier = 1.00;
         let crashPoint = 0;
         let gameInterval;
+        let betsHistory = []; // История ставок для CloudStorage
+        let chartData = []; // Данные для графика
 
         const display = document.getElementById('crash-display');
         const balanceEl = document.getElementById('balance');
         const btn = document.getElementById('action-btn');
         const betInput = document.getElementById('bet-input');
+        const historyBox = document.getElementById('history-box');
+        const notificationEl = document.getElementById('notification');
 
-        // Загрузка баланса из облака Telegram
-        tg.CloudStorage.getItem('user_balance', (err, value) => {
-            if (!err && value) balance = parseInt(value);
+        const canvas = document.getElementById('crash-chart');
+        const ctx = canvas.getContext('2d');
+        let animationFrameId;
+
+        // --- Загрузка/Сохранение данных ---
+        async function loadData() {
+            const storedBalance = await tg.CloudStorage.getItem('user_balance');
+            if (storedBalance) balance = parseInt(storedBalance);
+            
+            const storedHistory = await tg.CloudStorage.getItem('game_history');
+            if (storedHistory) betsHistory = JSON.parse(storedHistory);
+
             balanceEl.innerText = balance;
-        });
+            updateHistoryDisplay();
+        }
 
-        function saveBalance() {
-            tg.CloudStorage.setItem('user_balance', balance.toString());
+        async function saveBalance() {
+            await tg.CloudStorage.setItem('user_balance', balance.toString());
             balanceEl.innerText = balance;
         }
 
+        async function saveHistory() {
+            await tg.CloudStorage.setItem('game_history', JSON.stringify(betsHistory.slice(-5))); // Сохраняем последние 5
+            updateHistoryDisplay();
+        }
+
+        function showNotification(message) {
+            notificationEl.innerText = message;
+            notificationEl.classList.add('show');
+            setTimeout(() => {
+                notificationEl.classList.remove('show');
+            }, 3000);
+        }
+
+        function updateHistoryDisplay() {
+            historyBox.innerHTML = '<span>Последние:</span>';
+            betsHistory.forEach(item => {
+                const span = document.createElement('span');
+                span.classList.add('history-item');
+                span.classList.add(item.type); // 'win' или 'loss'
+                span.innerText = `x${item.multiplier}`;
+                historyBox.appendChild(span);
+            });
+        }
+
+        // --- Логика игры ---
         function startGame() {
             const bet = parseInt(betInput.value);
-            if (isNaN(bet) || bet <= 0 || bet > balance) {
-                alert('Недостаточно средств или неверная ставка!');
+            if (isNaN(bet) || bet <= 0) {
+                showNotification('Введите корректную ставку!');
+                return;
+            }
+            if (bet > balance) {
+                showNotification('Недостаточно средств!');
                 return;
             }
 
@@ -67,48 +140,134 @@
             
             isRunning = true;
             currentMultiplier = 1.00;
-            // Математика краша: чем выше икс, тем меньше шанс
-            crashPoint = Math.max(1.00, (Math.random() * 10 / (Math.random() * 8 + 0.1)).toFixed(2));
-            
+            display.innerText = 'x' + currentMultiplier.toFixed(2);
+            display.classList.remove('crashed', 'taken');
             btn.innerText = "ЗАБРАТЬ";
-            display.style.color = "white";
+            btn.disabled = false; // Разрешаем забрать
 
+            // Генерация crashPoint - чем меньше множитель, тем чаще он выпадает
+            // Увеличиваем шанс на более низкие множители
+            let randomVal = Math.random();
+            if (randomVal < 0.5) { // 50% шанс на краш до x2.00
+                crashPoint = parseFloat((1.01 + Math.random() * 0.99).toFixed(2));
+            } else if (randomVal < 0.8) { // 30% шанс на краш от x2.00 до x5.00
+                crashPoint = parseFloat((2.00 + Math.random() * 3.00).toFixed(2));
+            } else { // 20% шанс на краш выше x5.00
+                crashPoint = parseFloat((5.00 + Math.random() * 10.00).toFixed(2));
+            }
+            
+            chartData = [{ x: 0, y: 1 }]; // Начальная точка графика
+            startDrawingChart();
+
+            let startTime = Date.now();
             gameInterval = setInterval(() => {
-                currentMultiplier += 0.01 + (currentMultiplier * 0.005);
+                const elapsedTime = (Date.now() - startTime) / 1000; // время в секундах
+                // Усложненная формула для роста: начинается медленно, ускоряется
+                currentMultiplier = Math.max(1.00, 1 + Math.pow(elapsedTime, 1.5) * 0.5);
+
                 display.innerText = 'x' + currentMultiplier.toFixed(2);
 
+                chartData.push({ x: elapsedTime * 100, y: currentMultiplier }); // Множитель времени для масштаба X
+
                 if (currentMultiplier >= crashPoint) {
-                    endGame(false);
+                    endGame(false, bet);
                 }
-            }, 100);
+            }, 50); // Обновляем каждые 50мс
         }
 
-        function endGame(isWin) {
+        function endGame(isWin, bet) {
             clearInterval(gameInterval);
+            cancelAnimationFrame(animationFrameId); // Останавливаем отрисовку графика
             isRunning = false;
-            const bet = parseInt(betInput.value);
 
             if (isWin) {
                 const winAmount = Math.floor(bet * currentMultiplier);
                 balance += winAmount;
-                display.style.color = "#4CAF50";
+                display.classList.add('taken');
+                betsHistory.push({ type: 'win', multiplier: currentMultiplier.toFixed(2) });
+                showNotification(`Вы забрали x${currentMultiplier.toFixed(2)}! Выигрыш: ${winAmount} 💎`);
             } else {
-                display.innerText = "BOOM! x" + crashPoint;
-                display.style.color = "#F44336";
+                display.classList.add('crashed');
+                display.innerText = "BOOM! x" + crashPoint.toFixed(2);
+                betsHistory.push({ type: 'loss', multiplier: crashPoint.toFixed(2) });
+                showNotification(`КРАШ на x${crashPoint.toFixed(2)}!`);
             }
 
             saveBalance();
-            btn.innerText = "СТАВКА";
+            saveHistory();
+            btn.innerText = "ПОСТАВИТЬ";
+            btn.disabled = false;
         }
 
         btn.onclick = () => {
             if (!isRunning) {
                 startGame();
             } else {
-                endGame(true);
+                endGame(true, parseInt(betInput.value));
             }
         };
+
+        // --- Отрисовка графика ---
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+            canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            drawChart();
+        }
+
+        function drawChart() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Очистка
+            
+            if (chartData.length < 2) return;
+
+            const padding = 20;
+            const maxX = chartData[chartData.length - 1].x;
+            const maxY = Math.max(...chartData.map(d => d.y)); // Максимальный Y на графике
+
+            const scaleX = (canvas.width - padding * 2) / maxX;
+            const scaleY = (canvas.height - padding * 2) / (maxY * 1.2); // Увеличиваем maxY для запаса сверху
+
+            ctx.beginPath();
+            ctx.moveTo(padding, canvas.height - padding - (chartData[0].y - 1) * scaleY);
+
+            for (let i = 0; i < chartData.length; i++) {
+                const point = chartData[i];
+                const x = padding + point.x * scaleX;
+                const y = canvas.height - padding - (point.y - 1) * scaleY; // y=1 находится на нижней границе
+                ctx.lineTo(x, y);
+            }
+
+            ctx.strokeStyle = '#64ffda';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Если игра в процессе, рисуем текущую точку
+            if (isRunning && chartData.length > 0) {
+                const lastPoint = chartData[chartData.length - 1];
+                const x = padding + lastPoint.x * scaleX;
+                const y = canvas.height - padding - (lastPoint.y - 1) * scaleY;
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, Math.PI * 2);
+                ctx.fillStyle = '#64ffda';
+                ctx.fill();
+            }
+        }
+
+        function startDrawingChart() {
+            function animate() {
+                drawChart();
+                if (isRunning) {
+                    animationFrameId = requestAnimationFrame(animate);
+                }
+            }
+            animate();
+        }
+
+        // Инициализация
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas(); // Установим размер при загрузке
+        loadData(); // Загрузим данные при старте
     </script>
 </body>
-  </html>
-  
+    </html>
+    
