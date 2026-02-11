@@ -2,61 +2,146 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Краш Игра</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Ultimate Crash</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background: #1a1a2e; color: #e0e0e0; text-align: center; margin: 0; padding: 20px; overflow: hidden; display: flex; flex-direction: column; min-height: 100vh; }
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        :root {
+            --bg: #0b0e11;
+            --card: #1b1f24;
+            --accent: #f0b90b; /* Золотой стиль как на бирже */
+            --success: #02c076;
+            --danger: #f84960;
+            --text: #eaecef;
+        }
 
-        #header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        #balance-box { font-size: 1.2rem; font-weight: bold; color: #64ffda; display: flex; align-items: center; gap: 5px; }
-        #balance-box img { width: 24px; height: 24px; }
-        #history-box { font-size: 0.9rem; color: #888; display: flex; gap: 8px; justify-content: flex-end; }
-        .history-item { padding: 4px 8px; border-radius: 5px; background: #2a2a44; }
-        .win { color: #64ffda; }
-        .loss { color: #ff6b6b; }
+        body { 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            padding: 10px; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
+            box-sizing: border-box;
+            overflow: hidden;
+        }
 
-        #crash-display { font-size: 5rem; font-weight: bold; margin: 20px 0 10px; color: #ffffff; text-shadow: 0 0 15px rgba(255, 255, 255, 0.5); }
-        .crashed { color: #ff6b6b !important; text-shadow: 0 0 15px rgba(255, 107, 107, 0.7); }
-        .taken { color: #64ffda !important; text-shadow: 0 0 15px rgba(100, 255, 218, 0.7); }
+        /* Шапка */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; }
+        .balance-info { font-size: 1.1rem; font-weight: bold; color: var(--accent); }
 
-        #game-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; width: 100%; max-width: 600px; margin: 0 auto; }
-        canvas { background: #1a1a2e; border-radius: 15px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3); width: 100%; height: 250px; }
+        /* История (10 штук) */
+        .history-list { 
+            display: flex; 
+            gap: 6px; 
+            overflow-x: auto; 
+            padding: 10px 0; 
+            scrollbar-width: none;
+        }
+        .history-list::-webkit-scrollbar { display: none; }
+        .h-item { 
+            min-width: 45px; 
+            padding: 4px; 
+            background: var(--card); 
+            border-radius: 4px; 
+            text-align: center; 
+            font-size: 0.75rem; 
+            font-weight: bold;
+        }
 
-        .controls { display: flex; flex-direction: column; gap: 15px; align-items: center; width: 100%; max-width: 400px; margin-top: 30px; }
-        input[type="number"] { padding: 12px; border-radius: 10px; border: none; width: 100%; font-size: 1.1rem; background: #2a2a44; color: #e0e0e0; text-align: center; box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2); }
-        button { padding: 15px 30px; border-radius: 10px; border: none; background: linear-gradient(45deg, #64ffda, #30c8a3); color: #1a1a2e; font-size: 1.3rem; font-weight: bold; cursor: pointer; width: 100%; transition: all 0.2s ease; box-shadow: 0 4px 15px rgba(100, 255, 218, 0.4); }
-        button:disabled { background: #3a3a5a; color: #888; cursor: not-allowed; box-shadow: none; }
-        button:active { transform: translateY(2px); box-shadow: 0 2px 10px rgba(100, 255, 218, 0.3); }
+        /* Игровое поле */
+        .game-container { 
+            position: relative; 
+            flex-grow: 1; 
+            background: var(--card); 
+            border-radius: 12px; 
+            margin: 5px 0; 
+            display: flex; 
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #crash-multiplier { 
+            position: absolute; 
+            top: 20%; 
+            width: 100%; 
+            text-align: center; 
+            font-size: 3.5rem; 
+            font-weight: 800; 
+            z-index: 10;
+            transition: transform 0.1s;
+        }
+        canvas { width: 100%; height: 100%; }
 
-        #notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.8); color: white; padding: 10px 20px; border-radius: 10px; z-index: 1000; opacity: 0; transition: opacity 0.5s ease; }
-        #notification.show { opacity: 1; }
+        /* Панели ставок (2 штуки) */
+        .bet-area { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 0; }
+        .bet-control { 
+            background: var(--card); 
+            padding: 10px; 
+            border-radius: 12px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px;
+        }
+        input { 
+            background: #2b3139; 
+            border: 1px solid #474d57; 
+            color: white; 
+            padding: 8px; 
+            border-radius: 6px; 
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .bet-btn { 
+            border: none; 
+            padding: 12px; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            font-size: 1rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn-bet { background: var(--success); color: black; }
+        .btn-out { background: var(--accent); color: black; }
+        .btn-bet:disabled { background: #474d57; color: #848e9c; }
+
+        /* Анимация при краше */
+        .shake { animation: shake 0.4s; }
+        @keyframes shake {
+            0% { transform: translate(1px, 1px); }
+            20% { transform: translate(-3px, 0px); }
+            40% { transform: translate(3px, 2px); }
+            60% { transform: translate(-3px, 1px); }
+            100% { transform: translate(0, 0); }
+        }
     </style>
 </head>
 <body>
 
-    <div id="header">
-        <div id="balance-box">
-            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iIzY0ZmZkYSIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTAgMThoNGw0LTExaC00bC00IDExem01LTExaDd2LTJoLTlseS0yIDVoLTlsLTItNWgtOXYyaDdMMTAgMTZoLTJsLTIgNWgtMnYySDR2LTJMMiA4aDlMMTAgNmgtNGwtMiA1aC00VjVoMjR2Mmgxem0tMS41LTNoLTQuNTI4TTE3LjUgNWgyLjUzem0tNC4wMiA1aC01Ljk2eiIvPjwvc3ZnPg==" alt="Diamond">
-            <span id="balance">Загрузка...</span>
+    <div class="header">
+        <div class="balance-info">💰 <span id="balance">1000</span></div>
+        <div style="font-size: 0.8rem; opacity: 0.6;">CRASH PRO</div>
+    </div>
+
+    <div class="history-list" id="history">
         </div>
-        <div id="history-box">
-            <span>Последние:</span>
-            </div>
+
+    <div class="game-container" id="screen">
+        <div id="crash-multiplier">1.00x</div>
+        <canvas id="chart"></canvas>
     </div>
 
-    <div id="game-area">
-        <div id="crash-display">x1.00</div>
-        <canvas id="crash-chart"></canvas>
+    <div class="bet-area">
+        <div class="bet-control">
+            <input type="number" id="bet1-amount" value="10">
+            <button id="bet1-btn" class="bet-btn btn-bet">СТАВКА 1</button>
+        </div>
+        <div class="bet-control">
+            <input type="number" id="bet2-amount" value="10">
+            <button id="bet2-btn" class="bet-btn btn-bet">СТАВКА 2</button>
+        </div>
     </div>
-
-    <div class="controls">
-        <input type="number" id="bet-input" placeholder="Ваша ставка" value="10" min="1">
-        <button id="action-btn">ПОСТАВИТЬ</button>
-    </div>
-
-    <div id="notification"></div>
 
     <script>
         const tg = window.Telegram.WebApp;
@@ -65,209 +150,182 @@
 
         let balance = 1000;
         let isRunning = false;
-        let currentMultiplier = 1.00;
+        let currentX = 1.00;
         let crashPoint = 0;
-        let gameInterval;
-        let betsHistory = []; // История ставок для CloudStorage
-        let chartData = []; // Данные для графика
-
-        const display = document.getElementById('crash-display');
-        const balanceEl = document.getElementById('balance');
-        const btn = document.getElementById('action-btn');
-        const betInput = document.getElementById('bet-input');
-        const historyBox = document.getElementById('history-box');
-        const notificationEl = document.getElementById('notification');
-
-        const canvas = document.getElementById('crash-chart');
-        const ctx = canvas.getContext('2d');
-        let animationFrameId;
-
-        // --- Загрузка/Сохранение данных ---
-        async function loadData() {
-            const storedBalance = await tg.CloudStorage.getItem('user_balance');
-            if (storedBalance) balance = parseInt(storedBalance);
-            
-            const storedHistory = await tg.CloudStorage.getItem('game_history');
-            if (storedHistory) betsHistory = JSON.parse(storedHistory);
-
-            balanceEl.innerText = balance;
-            updateHistoryDisplay();
-        }
-
-        async function saveBalance() {
-            await tg.CloudStorage.setItem('user_balance', balance.toString());
-            balanceEl.innerText = balance;
-        }
-
-        async function saveHistory() {
-            await tg.CloudStorage.setItem('game_history', JSON.stringify(betsHistory.slice(-5))); // Сохраняем последние 5
-            updateHistoryDisplay();
-        }
-
-        function showNotification(message) {
-            notificationEl.innerText = message;
-            notificationEl.classList.add('show');
-            setTimeout(() => {
-                notificationEl.classList.remove('show');
-            }, 3000);
-        }
-
-        function updateHistoryDisplay() {
-            historyBox.innerHTML = '<span>Последние:</span>';
-            betsHistory.forEach(item => {
-                const span = document.createElement('span');
-                span.classList.add('history-item');
-                span.classList.add(item.type); // 'win' или 'loss'
-                span.innerText = `x${item.multiplier}`;
-                historyBox.appendChild(span);
-            });
-        }
-
-        // --- Логика игры ---
-        function startGame() {
-            const bet = parseInt(betInput.value);
-            if (isNaN(bet) || bet <= 0) {
-                showNotification('Введите корректную ставку!');
-                return;
-            }
-            if (bet > balance) {
-                showNotification('Недостаточно средств!');
-                return;
-            }
-
-            balance -= bet;
-            saveBalance();
-            
-            isRunning = true;
-            currentMultiplier = 1.00;
-            display.innerText = 'x' + currentMultiplier.toFixed(2);
-            display.classList.remove('crashed', 'taken');
-            btn.innerText = "ЗАБРАТЬ";
-            btn.disabled = false; // Разрешаем забрать
-
-            // Генерация crashPoint - чем меньше множитель, тем чаще он выпадает
-            // Увеличиваем шанс на более низкие множители
-            let randomVal = Math.random();
-            if (randomVal < 0.5) { // 50% шанс на краш до x2.00
-                crashPoint = parseFloat((1.01 + Math.random() * 0.99).toFixed(2));
-            } else if (randomVal < 0.8) { // 30% шанс на краш от x2.00 до x5.00
-                crashPoint = parseFloat((2.00 + Math.random() * 3.00).toFixed(2));
-            } else { // 20% шанс на краш выше x5.00
-                crashPoint = parseFloat((5.00 + Math.random() * 10.00).toFixed(2));
-            }
-            
-            chartData = [{ x: 0, y: 1 }]; // Начальная точка графика
-            startDrawingChart();
-
-            let startTime = Date.now();
-            gameInterval = setInterval(() => {
-                const elapsedTime = (Date.now() - startTime) / 1000; // время в секундах
-                // Усложненная формула для роста: начинается медленно, ускоряется
-                currentMultiplier = Math.max(1.00, 1 + Math.pow(elapsedTime, 1.5) * 0.5);
-
-                display.innerText = 'x' + currentMultiplier.toFixed(2);
-
-                chartData.push({ x: elapsedTime * 100, y: currentMultiplier }); // Множитель времени для масштаба X
-
-                if (currentMultiplier >= crashPoint) {
-                    endGame(false, bet);
-                }
-            }, 50); // Обновляем каждые 50мс
-        }
-
-        function endGame(isWin, bet) {
-            clearInterval(gameInterval);
-            cancelAnimationFrame(animationFrameId); // Останавливаем отрисовку графика
-            isRunning = false;
-
-            if (isWin) {
-                const winAmount = Math.floor(bet * currentMultiplier);
-                balance += winAmount;
-                display.classList.add('taken');
-                betsHistory.push({ type: 'win', multiplier: currentMultiplier.toFixed(2) });
-                showNotification(`Вы забрали x${currentMultiplier.toFixed(2)}! Выигрыш: ${winAmount} 💎`);
-            } else {
-                display.classList.add('crashed');
-                display.innerText = "BOOM! x" + crashPoint.toFixed(2);
-                betsHistory.push({ type: 'loss', multiplier: crashPoint.toFixed(2) });
-                showNotification(`КРАШ на x${crashPoint.toFixed(2)}!`);
-            }
-
-            saveBalance();
-            saveHistory();
-            btn.innerText = "ПОСТАВИТЬ";
-            btn.disabled = false;
-        }
-
-        btn.onclick = () => {
-            if (!isRunning) {
-                startGame();
-            } else {
-                endGame(true, parseInt(betInput.value));
-            }
+        let history = [];
+        
+        // Данные ставок
+        let playerBets = {
+            1: { active: false, amount: 0, cashedOut: false },
+            2: { active: false, amount: 0, cashedOut: false }
         };
 
-        // --- Отрисовка графика ---
-        function resizeCanvas() {
-            canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-            canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-            drawChart();
+        const canvas = document.getElementById('chart');
+        const ctx = canvas.getContext('2d');
+        const multiDisplay = document.getElementById('crash-multiplier');
+
+        // Авто-адаптация размера канваса
+        function resize() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+        }
+        window.onresize = resize;
+        resize();
+
+        // Загрузка данных
+        tg.CloudStorage.getItem('bal', (e, v) => { if(v) { balance = parseInt(v); updateUI(); }});
+        tg.CloudStorage.getItem('hist', (e, v) => { if(v) { history = JSON.parse(v); updateUI(); }});
+
+        function updateUI() {
+            document.getElementById('balance').innerText = balance;
+            const histEl = document.getElementById('history');
+            histEl.innerHTML = history.map(x => `<div class="h-item" style="color:${x >= 2 ? '#02c076' : '#f84960'}">${x}x</div>`).join('');
         }
 
-        function drawChart() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Очистка
+        function generateCrashPoint() {
+            // Реалистичный алгоритм: 1.00x падает в ~3% случаев. Большие иксы возможны, но редко.
+            let e = 2**32;
+            let h = crypto.getRandomValues(new Uint32Array(1))[0];
+            if (h % 33 === 0) return 1.00;
+            return Math.floor((100 * e - h) / (e - h)) / 100;
+        }
+
+        function startRound() {
+            if (isRunning) return;
             
-            if (chartData.length < 2) return;
+            // Проверка ставок
+            let hasBets = false;
+            [1, 2].forEach(i => {
+                let amt = parseInt(document.getElementById(`bet${i}-amount`).value);
+                if (playerBets[i].active && amt <= balance && amt > 0) {
+                    playerBets[i].amount = amt;
+                    playerBets[i].cashedOut = false;
+                    balance -= amt;
+                    hasBets = true;
+                } else {
+                    playerBets[i].active = false;
+                    updateBtn(i, 'bet');
+                }
+            });
 
-            const padding = 20;
-            const maxX = chartData[chartData.length - 1].x;
-            const maxY = Math.max(...chartData.map(d => d.y)); // Максимальный Y на графике
+            if (!hasBets) return;
 
-            const scaleX = (canvas.width - padding * 2) / maxX;
-            const scaleY = (canvas.height - padding * 2) / (maxY * 1.2); // Увеличиваем maxY для запаса сверху
+            isRunning = true;
+            currentX = 1.00;
+            crashPoint = generateCrashPoint();
+            console.log("Crash at:", crashPoint); // Для теста
 
-            ctx.beginPath();
-            ctx.moveTo(padding, canvas.height - padding - (chartData[0].y - 1) * scaleY);
+            let startTime = Date.now();
+            updateUI();
 
-            for (let i = 0; i < chartData.length; i++) {
-                const point = chartData[i];
-                const x = padding + point.x * scaleX;
-                const y = canvas.height - padding - (point.y - 1) * scaleY; // y=1 находится на нижней границе
-                ctx.lineTo(x, y);
-            }
+            function step() {
+                if (!isRunning) return;
+                
+                let now = Date.now();
+                let duration = (now - startTime) / 1000;
+                
+                // Формула роста (экспонента)
+                currentX = Math.pow(1.06, duration * 5); 
+                
+                multiDisplay.innerText = currentX.toFixed(2) + "x";
+                multiDisplay.style.color = "white";
 
-            ctx.strokeStyle = '#64ffda';
-            ctx.lineWidth = 3;
-            ctx.stroke();
+                drawGraph(duration);
 
-            // Если игра в процессе, рисуем текущую точку
-            if (isRunning && chartData.length > 0) {
-                const lastPoint = chartData[chartData.length - 1];
-                const x = padding + lastPoint.x * scaleX;
-                const y = canvas.height - padding - (lastPoint.y - 1) * scaleY;
-                ctx.beginPath();
-                ctx.arc(x, y, 6, 0, Math.PI * 2);
-                ctx.fillStyle = '#64ffda';
-                ctx.fill();
-            }
-        }
-
-        function startDrawingChart() {
-            function animate() {
-                drawChart();
-                if (isRunning) {
-                    animationFrameId = requestAnimationFrame(animate);
+                if (currentX >= crashPoint) {
+                    doCrash();
+                } else {
+                    requestAnimationFrame(step);
                 }
             }
-            animate();
+            requestAnimationFrame(step);
         }
 
-        // Инициализация
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas(); // Установим размер при загрузке
-        loadData(); // Загрузим данные при старте
+        function drawGraph(t) {
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = varColor('--accent');
+            
+            // Линия, которая идет вверх
+            ctx.moveTo(0, canvas.height);
+            let x = (t * 40) % canvas.width;
+            let y = canvas.height - (Math.log10(currentX) * 200);
+            
+            ctx.bezierCurveTo(canvas.width/2, canvas.height, x, y, x, y);
+            ctx.stroke();
+            
+            // Свечение под линией
+            ctx.lineTo(x, canvas.height);
+            ctx.lineTo(0, canvas.height);
+            let grad = ctx.createLinearGradient(0,0,0,canvas.height);
+            grad.addColorStop(0, 'rgba(240, 185, 11, 0.2)');
+            grad.addColorStop(1, 'transparent');
+            ctx.fillStyle = grad;
+            ctx.fill();
+        }
+
+        function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name); }
+
+        function doCrash() {
+            isRunning = false;
+            multiDisplay.innerText = "BOOM " + currentX.toFixed(2) + "x";
+            multiDisplay.style.color = varColor('--danger');
+            document.getElementById('screen').classList.add('shake');
+            setTimeout(() => document.getElementById('screen').classList.remove('shake'), 400);
+
+            history.unshift(currentX.toFixed(2));
+            if (history.length > 10) history.pop();
+
+            [1, 2].forEach(i => {
+                playerBets[i].active = false;
+                updateBtn(i, 'bet');
+            });
+
+            tg.CloudStorage.setItem('bal', balance.toString());
+            tg.CloudStorage.setItem('hist', JSON.stringify(history));
+            updateUI();
+        }
+
+        function cashOut(i) {
+            if (isRunning && playerBets[i].active && !playerBets[i].cashedOut) {
+                let win = Math.floor(playerBets[i].amount * currentX);
+                balance += win;
+                playerBets[i].cashedOut = true;
+                updateBtn(i, 'win');
+                tg.HapticFeedback.notificationOccurred('success');
+            }
+        }
+
+        function updateBtn(i, state) {
+            const b = document.getElementById(`bet${i}-btn`);
+            if (state === 'bet') {
+                b.innerText = `СТАВКА ${i}`;
+                b.className = "bet-btn btn-bet";
+            } else if (state === 'out') {
+                b.innerText = `ЗАБРАТЬ`;
+                b.className = "bet-btn btn-out";
+            } else if (state === 'win') {
+                b.innerText = `ВЫИГРЫШ!`;
+                b.disabled = true;
+                setTimeout(() => b.disabled = false, 1000);
+            }
+        }
+
+        // Обработка кнопок
+        [1, 2].forEach(i => {
+            document.getElementById(`bet${i}-btn`).onclick = () => {
+                if (!isRunning) {
+                    playerBets[i].active = !playerBets[i].active;
+                    document.getElementById(`bet${i}-btn`).style.opacity = playerBets[i].active ? "0.5" : "1";
+                    // Если хоть одна ставка готова, запускаем через задержку или сразу
+                    if (!isRunning) setTimeout(startRound, 500);
+                } else {
+                    cashOut(i);
+                }
+            };
+        });
+
     </script>
 </body>
-    </html>
-    
+</html>
