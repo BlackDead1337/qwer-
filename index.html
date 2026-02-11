@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Crash Game</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #0e1621; color: white; text-align: center; margin: 0; padding: 20px; overflow: hidden; }
+        #balance-box { font-size: 1.2rem; margin-bottom: 20px; color: #34b7f1; }
+        #crash-display { font-size: 4rem; font-weight: bold; margin: 50px 0; transition: color 0.2s; }
+        .controls { display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        input { padding: 10px; border-radius: 8px; border: none; width: 80%; font-size: 1rem; }
+        button { padding: 15px 30px; border-radius: 8px; border: none; background: #248bcf; color: white; font-size: 1.2rem; cursor: pointer; width: 80%; }
+        button:disabled { background: #444; }
+        .history { margin-top: 30px; font-size: 0.9rem; opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+    <div id="balance-box">Баланс: <span id="balance">Загрузка...</span> 💎</div>
+    <div id="crash-display">x1.00</div>
+
+    <div class="controls">
+        <input type="number" id="bet-input" placeholder="Ваша ставка" value="10">
+        <button id="action-btn">СТАВКА</button>
+    </div>
+
+    <div class="history" id="history">Последние игры: -</div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        let balance = 1000;
+        let isRunning = false;
+        let currentMultiplier = 1.00;
+        let crashPoint = 0;
+        let gameInterval;
+
+        const display = document.getElementById('crash-display');
+        const balanceEl = document.getElementById('balance');
+        const btn = document.getElementById('action-btn');
+        const betInput = document.getElementById('bet-input');
+
+        // Загрузка баланса из облака Telegram
+        tg.CloudStorage.getItem('user_balance', (err, value) => {
+            if (!err && value) balance = parseInt(value);
+            balanceEl.innerText = balance;
+        });
+
+        function saveBalance() {
+            tg.CloudStorage.setItem('user_balance', balance.toString());
+            balanceEl.innerText = balance;
+        }
+
+        function startGame() {
+            const bet = parseInt(betInput.value);
+            if (isNaN(bet) || bet <= 0 || bet > balance) {
+                alert('Недостаточно средств или неверная ставка!');
+                return;
+            }
+
+            balance -= bet;
+            saveBalance();
+            
+            isRunning = true;
+            currentMultiplier = 1.00;
+            // Математика краша: чем выше икс, тем меньше шанс
+            crashPoint = Math.max(1.00, (Math.random() * 10 / (Math.random() * 8 + 0.1)).toFixed(2));
+            
+            btn.innerText = "ЗАБРАТЬ";
+            display.style.color = "white";
+
+            gameInterval = setInterval(() => {
+                currentMultiplier += 0.01 + (currentMultiplier * 0.005);
+                display.innerText = 'x' + currentMultiplier.toFixed(2);
+
+                if (currentMultiplier >= crashPoint) {
+                    endGame(false);
+                }
+            }, 100);
+        }
+
+        function endGame(isWin) {
+            clearInterval(gameInterval);
+            isRunning = false;
+            const bet = parseInt(betInput.value);
+
+            if (isWin) {
+                const winAmount = Math.floor(bet * currentMultiplier);
+                balance += winAmount;
+                display.style.color = "#4CAF50";
+            } else {
+                display.innerText = "BOOM! x" + crashPoint;
+                display.style.color = "#F44336";
+            }
+
+            saveBalance();
+            btn.innerText = "СТАВКА";
+        }
+
+        btn.onclick = () => {
+            if (!isRunning) {
+                startGame();
+            } else {
+                endGame(true);
+            }
+        };
+    </script>
+</body>
+  </html>
+  
