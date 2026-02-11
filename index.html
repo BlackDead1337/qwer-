@@ -3,83 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ultimate Crash Pro</title>
+    <title>Ultimate Crash Pro v3</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
             --bg: #0b0b15;
-            --panel: rgba(255, 255, 255, 0.05);
+            --panel: rgba(255, 255, 255, 0.07);
             --accent: #f0b90b;
             --success: #00ff88;
             --danger: #ff4d4d;
             --text: #ffffff;
+            --chat-bubble: rgba(255, 255, 255, 0.1);
         }
 
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; overflow: hidden; }
 
         /* Шапка */
-        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: rgba(0,0,0,0.5); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: rgba(0,0,0,0.6); border-bottom: 1px solid rgba(255,255,255,0.1); }
         #bal-top { font-weight: 800; color: var(--accent); font-size: 1.1rem; }
-        .admin-btn { opacity: 0.3; font-size: 1.2rem; cursor: pointer; }
+        .rank-tag { font-size: 0.6rem; background: var(--accent); color: #000; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
 
         /* История */
-        #history-bar { display: flex; gap: 8px; padding: 10px; overflow-x: auto; background: rgba(0,0,0,0.3); scrollbar-width: none; min-height: 25px;}
+        #history-bar { display: flex; gap: 8px; padding: 10px; overflow-x: auto; background: rgba(0,0,0,0.3); scrollbar-width: none; min-height: 35px; align-items: center;}
         #history-bar::-webkit-scrollbar { display: none; }
-        .h-item { padding: 4px 12px; border-radius: 20px; background: var(--panel); font-size: 0.8rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.05); }
+        .h-item { padding: 4px 12px; border-radius: 20px; background: var(--panel); font-size: 0.8rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
 
-        /* Игровое поле */
-        .page { display: none; flex-direction: column; height: 85vh; padding: 10px; box-sizing: border-box; }
+        /* Страницы */
+        .page { display: none; flex-direction: column; height: calc(100vh - 160px); padding: 10px; box-sizing: border-box; }
         .active { display: flex; }
         
-        .crash-area { position: relative; height: 30vh; background: #000; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 10px; }
-        #multiplier { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; font-weight: 900; z-index: 5; text-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        #timer-display { position: absolute; top: 15px; width: 100%; text-align: center; color: var(--accent); font-weight: bold; z-index: 4; }
+        /* График */
+        .crash-area { position: relative; height: 28vh; background: #000; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 10px; }
+        #multiplier { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3.5rem; font-weight: 900; z-index: 5; transition: color 0.2s; }
+        #timer-display { position: absolute; top: 15px; width: 100%; text-align: center; color: var(--accent); font-weight: bold; z-index: 4; text-transform: uppercase; letter-spacing: 1px; }
         canvas { width: 100%; height: 100%; }
 
         /* Ставки */
         .bet-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .bet-card { background: var(--panel); padding: 12px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); }
-        .input-group { margin-bottom: 8px; }
-        .input-label { font-size: 0.6rem; opacity: 0.5; margin-bottom: 2px; display: block; }
-        input { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px; border-radius: 8px; width: 100%; box-sizing: border-box; font-weight: bold; }
+        .bet-card { background: var(--panel); padding: 10px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); position: relative; }
+        .input-group { margin-bottom: 5px; }
+        .input-label { font-size: 0.55rem; opacity: 0.5; margin-bottom: 2px; display: block; }
+        input { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 6px 10px; border-radius: 8px; width: 100%; box-sizing: border-box; font-weight: bold; font-size: 0.9rem; }
         
-        .main-btn { width: 100%; border: none; padding: 12px; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; }
-        .btn-play { background: var(--success); color: #000; }
-        .btn-waiting { background: #333; color: #fff; opacity: 0.7; }
-        .btn-stop { background: var(--accent); color: #000; }
+        .main-btn { width: 100%; border: none; padding: 10px; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; font-size: 0.8rem; }
+        .btn-play { background: var(--success); color: #002b18; }
+        .btn-waiting { background: #333; color: #fff; opacity: 0.6; }
+        .btn-stop { background: var(--accent); color: #000; box-shadow: 0 0 15px rgba(240,185,11,0.3); }
+        .share-btn { position: absolute; top: -5px; right: -5px; background: #3498db; border: none; border-radius: 50%; width: 25px; height: 25px; color: white; font-size: 12px; display: none; z-index: 10; cursor: pointer; }
 
-        /* Список игроков */
+        /* Игроки */
         .players-list { background: var(--panel); border-radius: 15px; flex-grow: 1; overflow-y: auto; padding: 10px; border: 1px solid rgba(255,255,255,0.05); }
-        .player-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.02); font-size: 0.8rem; }
+        .player-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.75rem; }
         .p-win { color: var(--success); font-weight: bold; }
         .p-lost { color: var(--danger); opacity: 0.7; }
 
-        /* Админ-панель */
+        /* Кликер */
+        .click-area { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .coin { width: 150px; height: 150px; background: radial-gradient(circle, #f0b90b 0%, #b38a00 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 60px; cursor: pointer; box-shadow: 0 0 40px rgba(240, 185, 11, 0.4); border: 8px solid rgba(255,255,255,0.1); transition: transform 0.05s; }
+        .coin:active { transform: scale(0.95); }
+
+        /* Чат */
+        .chat-wrap { flex-grow: 1; display: flex; flex-direction: column; background: var(--panel); border-radius: 15px; overflow: hidden; }
+        .chat-msgs { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .chat-msg { background: var(--chat-bubble); padding: 8px 12px; border-radius: 12px; font-size: 0.85rem; max-width: 85%; align-self: flex-start; }
+        .chat-msg.me { align-self: flex-end; background: rgba(0, 255, 136, 0.15); border: 1px solid rgba(0,255,136,0.1); }
+        .chat-msg.system { align-self: center; background: rgba(240, 185, 11, 0.1); border: 1px dashed var(--accent); font-size: 0.7rem; color: var(--accent); text-align: center; max-width: 95%; }
+        .chat-input-area { display: flex; padding: 10px; gap: 5px; background: rgba(0,0,0,0.3); }
+
+        /* Меню */
+        .hotbar { position: fixed; bottom: 0; width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); background: #12121e; padding: 10px 0 25px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .nav-item { text-align: center; opacity: 0.4; font-size: 0.65rem; transition: 0.3s; }
+        .nav-item.active-nav { opacity: 1; color: var(--accent); transform: translateY(-3px); }
+
         #admin-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-
-        /* Нижнее меню */
-        .hotbar { position: fixed; bottom: 0; width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); background: #12121e; padding: 15px 0 30px; border-top: 1px solid rgba(255,255,255,0.1); }
-        .nav-item { text-align: center; opacity: 0.4; font-size: 0.7rem; }
-        .nav-item.active-nav { opacity: 1; color: var(--accent); }
-
-        .shake { animation: shake 0.2s ease-in-out 0s 2; }
-        @keyframes shake { 0% { margin-left: 0rem; } 25% { margin-left: 0.5rem; } 75% { margin-left: -0.5rem; } 100% { margin-left: 0rem; } }
+        .shake { animation: shake 0.25s infinite; }
+        @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 100% { transform: translate(0,0); } }
     </style>
 </head>
 <body>
 
     <div id="admin-modal">
-        <h3>ТЕСТ: СЛЕДУЮЩИЙ ИКС</h3>
-        <input type="number" id="next-crash-input" step="0.1" placeholder="Например: 5.5">
-        <button class="main-btn btn-play" style="margin-top: 15px;" onclick="setNextCrash()">УСТАНОВИТЬ</button>
-        <button class="main-btn" style="margin-top: 10px; background: #444;" onclick="document.getElementById('admin-modal').style.display='none'">ОТМЕНА</button>
+        <h3 style="color:var(--accent)">АДМИН-ПАНЕЛЬ</h3>
+        <span class="input-label">СЛЕДУЮЩИЙ КРАШ</span>
+        <input type="number" id="next-crash-input" step="0.1" value="2.0">
+        <button class="main-btn btn-play" style="margin-top: 15px;" onclick="setNextCrash()">ПРИМЕНИТЬ</button>
+        <button class="main-btn" style="margin-top: 10px; background: #333; color: #fff;" onclick="document.getElementById('admin-modal').style.display='none'">ЗАКРЫТЬ</button>
     </div>
 
     <div class="top-nav">
-        <div id="bal-top">💰 1,000</div>
+        <div>
+            <span id="bal-top">💰 1,000</span>
+            <span id="rank-display" class="rank-tag">НОВИЧОК</span>
+        </div>
         <div style="display:flex; gap:15px; align-items:center;">
-            <div class="admin-btn" onclick="document.getElementById('admin-modal').style.display='flex'">⚙️</div>
-            <div class="profile-trigger" onclick="tg.showAlert('Профиль в разработке')">👤</div>
+            <div style="opacity:0.3" onclick="document.getElementById('admin-modal').style.display='flex'">⚙️</div>
+            <div onclick="tg.showAlert('Версия 3.0 Stable')">ℹ️</div>
         </div>
     </div>
 
@@ -87,30 +105,32 @@
 
     <div id="page-game" class="page active">
         <div class="crash-area" id="canvas-container">
-            <div id="timer-display">ОЖИДАНИЕ...</div>
+            <div id="timer-display">ЖДЕМ СТАВОК...</div>
             <div id="multiplier">1.00x</div>
             <canvas id="chart"></canvas>
         </div>
 
         <div class="bet-container">
             <div class="bet-card">
+                <button id="share1" class="share-btn" onclick="shareToChat(1)">📢</button>
                 <div class="input-group">
                     <span class="input-label">СУММА</span>
                     <input type="number" id="amt1" value="100">
                 </div>
                 <div class="input-group">
-                    <span class="input-label">АВТОСТОП</span>
+                    <span class="input-label">АВТО</span>
                     <input type="number" id="auto1" value="2.0" step="0.1">
                 </div>
                 <button id="btn1" class="main-btn btn-play" onclick="placeBet(1)">СТАВКА</button>
             </div>
             <div class="bet-card">
+                <button id="share2" class="share-btn" onclick="shareToChat(2)">📢</button>
                 <div class="input-group">
                     <span class="input-label">СУММА</span>
                     <input type="number" id="amt2" value="100">
                 </div>
                 <div class="input-group">
-                    <span class="input-label">АВТОСТОП</span>
+                    <span class="input-label">АВТО</span>
                     <input type="number" id="auto2" value="1.5" step="0.1">
                 </div>
                 <button id="btn2" class="main-btn btn-play" onclick="placeBet(2)">СТАВКА</button>
@@ -120,12 +140,29 @@
         <div class="players-list" id="players-box"></div>
     </div>
 
-    <div id="page-clicker" class="page">КЛИКЕР В РАЗРАБОТКЕ</div>
-    <div id="page-chat" class="page">ЧАТ В РАЗРАБОТКЕ</div>
+    <div id="page-clicker" class="page">
+        <div class="click-area">
+            <div class="coin" onclick="handleLuckyClick()">💎</div>
+            <h2 id="click-status" style="margin-top:20px; color:var(--accent)">ПОПРОБУЙ УДАЧУ</h2>
+            <p style="opacity:0.5; font-size:0.8rem; text-align:center">Шанс 50% получить +1,000 монет<br>Иначе всего +1 монета</p>
+        </div>
+    </div>
+
+    <div id="page-chat" class="page">
+        <div class="chat-wrap">
+            <div class="chat-msgs" id="chat-content">
+                <div class="chat-msg system">Добро пожаловать в общий чат! Не спамьте.</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Введите сообщение...">
+                <button class="main-btn btn-play" style="width:50px" onclick="sendChatMessage()">📡</button>
+            </div>
+        </div>
+    </div>
 
     <nav class="hotbar">
-        <div class="nav-item" onclick="showPage('clicker', this)">⛏️<br>КЛИКЕР</div>
-        <div class="nav-item active-nav" onclick="showPage('game', this)">🚀<br>ИГРА</div>
+        <div class="nav-item" onclick="showPage('clicker', this)">⛏️<br>УДАЧА</div>
+        <div class="nav-item active-nav" onclick="showPage('game', this)">🚀<br>КРАШ</div>
         <div class="nav-item" onclick="showPage('chat', this)">💬<br>ЧАТ</div>
     </nav>
 
@@ -141,26 +178,51 @@
         let nextCrashOverride = null;
         let gameHistory = [];
         
-        // Ставки игрока
         let playerBets = {
-            1: { state: 'none', amt: 0, auto: 0, win: 0 }, // none, queued, active, cashed
+            1: { state: 'none', amt: 0, auto: 0, win: 0 },
             2: { state: 'none', amt: 0, auto: 0, win: 0 }
         };
 
-        // Боты
+        let botNames = ["Alpha_Bet", "RichDoge", "Satoshi_N", "Gamer_X", "Profit_Man", "CrashMaster", "Luck777"];
         let currentBots = [];
-        const botNames = ["Ivan_G", "CryptoKing", "LuckyMan", "DogeLover", "Satoshi", "Turbo_Max", "Zenith", "MoonBoy", "Whale_Watcher"];
 
         const canvas = document.getElementById('chart');
         const ctx = canvas.getContext('2d');
 
-        function setNextCrash() {
-            let val = parseFloat(document.getElementById('next-crash-input').value);
-            if(val >= 1) {
-                nextCrashOverride = val;
-                document.getElementById('admin-modal').style.display = 'none';
-                tg.showScanQrPopup({ text: "Читы активированы!" });
-                setTimeout(() => tg.closeScanQrPopup(), 1000);
+        // Утилиты
+        function getRank(bal) {
+            if(bal > 100000) return "МАГНАТ";
+            if(bal > 50000) return "КИТ";
+            if(bal > 10000) return "ИГРОК";
+            return "НОВИЧОК";
+        }
+
+        function updateUI() {
+            document.getElementById('bal-top').innerText = "💰 " + Math.floor(balance).toLocaleString();
+            document.getElementById('rank-display').innerText = getRank(balance);
+            
+            for(let i=1; i<=2; i++) {
+                let btn = document.getElementById('btn' + i);
+                let share = document.getElementById('share' + i);
+                let state = playerBets[i].state;
+                
+                if(state === 'queued') {
+                    btn.innerText = "В ОЧЕРЕДИ";
+                    btn.className = "main-btn btn-waiting";
+                    share.style.display = "none";
+                } else if(state === 'active') {
+                    btn.innerText = "ЗАБРАТЬ";
+                    btn.className = "main-btn btn-stop";
+                    share.style.display = "none";
+                } else if(state === 'cashed') {
+                    btn.innerText = "ГОТОВО";
+                    btn.className = "main-btn btn-play";
+                    share.style.display = "block";
+                } else {
+                    btn.innerText = "СТАВКА";
+                    btn.className = "main-btn btn-play";
+                    share.style.display = "none";
+                }
             }
         }
 
@@ -171,36 +233,54 @@
             el.classList.add('active-nav');
         }
 
-        function updateUI() {
-            document.getElementById('bal-top').innerText = "💰 " + Math.floor(balance).toLocaleString();
+        // КЛИКЕР
+        function handleLuckyClick() {
+            tg.HapticFeedback.impactOccurred('medium');
+            let isMega = Math.random() > 0.5;
+            let add = isMega ? 1000 : 1;
+            balance += add;
             
-            // Обновление кнопок
-            for(let i=1; i<=2; i++) {
-                let btn = document.getElementById('btn' + i);
-                let state = playerBets[i].state;
-                
-                if(state === 'queued') {
-                    btn.innerText = "В ОЧЕРЕДИ...";
-                    btn.className = "main-btn btn-waiting";
-                } else if(state === 'active') {
-                    btn.innerText = "ЗАБРАТЬ";
-                    btn.className = "main-btn btn-stop";
-                } else if(state === 'none' || state === 'cashed') {
-                    btn.innerText = "СТАВКА";
-                    btn.className = "main-btn btn-play";
-                }
+            let status = document.getElementById('click-status');
+            status.innerText = isMega ? "+1,000 МОНЕТ! 🎉" : "+1 монета";
+            status.style.color = isMega ? "var(--success)" : "white";
+            
+            updateUI();
+            setTimeout(() => { 
+                status.innerText = "ПОПРОБУЙ УДАЧУ"; 
+                status.style.color = "var(--accent)"; 
+            }, 1000);
+        }
+
+        // ЧАТ
+        function sendChatMessage() {
+            let inp = document.getElementById('chat-input');
+            if(!inp.value.trim()) return;
+            appendMsg(`Вы: ${inp.value}`, 'me');
+            inp.value = "";
+        }
+
+        function appendMsg(text, type) {
+            let container = document.getElementById('chat-content');
+            let div = document.createElement('div');
+            div.className = `chat-msg ${type}`;
+            div.innerText = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function shareToChat(i) {
+            if(playerBets[i].win > 0) {
+                appendMsg(`📢 СИСТЕМА: Игрок затащил x${playerBets[i].win}!`, 'system');
+                document.getElementById('share' + i).style.display = "none";
+                tg.showAlert("Выигрыш отправлен в чат!");
             }
         }
 
+        // ИГРОВАЯ ЛОГИКА
         function placeBet(i) {
-            if(playerBets[i].state === 'active') {
-                cashOut(i);
-                return;
-            }
-
+            if(playerBets[i].state === 'active') { cashOut(i); return; }
             let amt = parseInt(document.getElementById('amt'+i).value);
-            let auto = parseFloat(document.getElementById('auto1').value);
-            if(amt > balance) { tg.showAlert("Недостаточно монет!"); return; }
+            if(amt > balance || amt <= 0) { tg.showAlert("Некорректная ставка"); return; }
 
             playerBets[i].amt = amt;
             playerBets[i].auto = parseFloat(document.getElementById('auto' + i).value);
@@ -210,7 +290,6 @@
             } else {
                 playerBets[i].state = 'active';
                 balance -= amt;
-                if(!isWaiting) startPreGame();
             }
             updateUI();
         }
@@ -219,37 +298,32 @@
             if(playerBets[i].state === 'active' && isRunning) {
                 let win = playerBets[i].amt * currentX;
                 balance += win;
-                playerBets[i].win = currentX;
+                playerBets[i].win = currentX.toFixed(2);
                 playerBets[i].state = 'cashed';
                 tg.HapticFeedback.notificationOccurred('success');
                 updateUI();
             }
         }
 
-        function generateBots() {
-            currentBots = [];
-            let count = Math.floor(Math.random() * 5) + 3;
-            for(let i=0; i<count; i++) {
-                currentBots.push({
-                    name: botNames[Math.floor(Math.random()*botNames.length)],
-                    amt: Math.floor(Math.random() * 500) + 50,
-                    target: (Math.random() * 5 + 1.1).toFixed(2),
-                    win: 0,
-                    lost: false
-                });
-            }
-        }
-
         function startPreGame() {
             isWaiting = true;
-            let timer = 5;
-            generateBots();
+            let timer = 15;
             
+            currentBots = [];
+            let bCount = Math.floor(Math.random() * 6) + 2;
+            for(let i=0; i<bCount; i++) {
+                currentBots.push({
+                    name: botNames[Math.floor(Math.random()*botNames.length)],
+                    amt: Math.floor(Math.random()*500)+50,
+                    target: (Math.random()*4 + 1.1).toFixed(2),
+                    win: 0, lost: false
+                });
+            }
+
             const intv = setInterval(() => {
                 timer -= 0.1;
-                document.getElementById('timer-display').innerText = `ДО ВЗЛЕТА: ${timer.toFixed(1)}s`;
+                document.getElementById('timer-display').innerText = `ВЗЛЕТ ЧЕРЕЗ: ${timer.toFixed(1)}с`;
                 updatePlayersList();
-                
                 if(timer <= 0) {
                     clearInterval(intv);
                     isWaiting = false;
@@ -260,16 +334,15 @@
 
         function runGame() {
             isRunning = true;
-            document.getElementById('timer-display').innerText = "ВЗЛЕТ!";
+            document.getElementById('timer-display').innerText = "В ПОЛЕТЕ";
             
-            // Расчет точки краша
             if(nextCrashOverride) {
                 crashPoint = nextCrashOverride;
                 nextCrashOverride = null;
             } else {
                 let r = Math.random();
-                crashPoint = (0.98 / (1 - r)).toFixed(2);
-                if(r < 0.05) crashPoint = 1.00; // Моментальный краш 5%
+                crashPoint = (1.00 / (1 - r)).toFixed(2);
+                if(r < 0.08) crashPoint = 1.00; 
             }
 
             currentX = 1.00;
@@ -277,34 +350,27 @@
 
             function tick() {
                 if(!isRunning) return;
-                
                 let elapsed = (Date.now() - start) / 1000;
-                currentX = Math.pow(1.08, elapsed * 5); // Скорость роста
+                
+                // Замедленная формула роста
+                currentX = 1 + (0.05 * Math.pow(elapsed, 1.5));
+                if(currentX < 1) currentX = 1;
 
                 document.getElementById('multiplier').innerText = currentX.toFixed(2) + "x";
 
-                // Автостоп игрока
                 for(let i=1; i<=2; i++) {
-                    if(playerBets[i].state === 'active' && currentX >= playerBets[i].auto) {
-                        cashOut(i);
-                    }
+                    if(playerBets[i].state === 'active' && currentX >= playerBets[i].auto) cashOut(i);
                 }
 
-                // Логика ботов
                 currentBots.forEach(b => {
-                    if(b.win === 0 && !b.lost && currentX >= b.target) {
-                        b.win = b.target;
-                    }
+                    if(b.win === 0 && !b.lost && currentX >= b.target) b.win = b.target;
                 });
 
                 drawChart(elapsed);
                 updatePlayersList();
 
-                if(currentX >= crashPoint) {
-                    endGame();
-                } else {
-                    requestAnimationFrame(tick);
-                }
+                if(currentX >= crashPoint) endGame();
+                else requestAnimationFrame(tick);
             }
             tick();
         }
@@ -315,29 +381,24 @@
             document.getElementById('multiplier').style.color = "var(--danger)";
             document.getElementById('canvas-container').classList.add('shake');
 
-            // История
             gameHistory.unshift(currentX.toFixed(2));
-            if(gameHistory.length > 10) gameHistory.pop();
+            if(gameHistory.length > 12) gameHistory.pop();
             renderHistory();
 
-            // Проверка проигрыша ботов
             currentBots.forEach(b => { if(b.win === 0) b.lost = true; });
 
-            // Сброс ставок
             setTimeout(() => {
                 document.getElementById('canvas-container').classList.remove('shake');
                 document.getElementById('multiplier').style.color = "#fff";
-                
                 for(let i=1; i<=2; i++) {
                     if(playerBets[i].state === 'queued') {
                         playerBets[i].state = 'active';
                         balance -= playerBets[i].amt;
-                    } else {
+                    } else if(playerBets[i].state !== 'cashed') {
                         playerBets[i].state = 'none';
                     }
-                    playerBets[i].win = 0;
+                    if(playerBets[i].state === 'none') playerBets[i].win = 0;
                 }
-                
                 updateUI();
                 startPreGame();
             }, 3000);
@@ -345,35 +406,17 @@
 
         function updatePlayersList() {
             let html = "";
-            // Игрок
             for(let i=1; i<=2; i++) {
-                if(playerBets[i].state !== 'none' && playerBets[i].state !== 'queued') {
-                    let status = "В игре";
-                    let cls = "";
-                    if(playerBets[i].state === 'cashed') {
-                        status = `+${(playerBets[i].amt * playerBets[i].win).toFixed(0)} (x${playerBets[i].win})`;
-                        cls = "p-win";
-                    } else if (!isRunning && !isWaiting) {
-                        status = "❌";
-                        cls = "p-lost";
-                    }
-                    html += `<div class="player-row"><span>👤 Вы (Слот ${i})</span><span class="${cls}">${status}</span></div>`;
+                if(playerBets[i].state === 'active' || playerBets[i].state === 'cashed') {
+                    let res = playerBets[i].state === 'cashed' ? `<span class="p-win">x${playerBets[i].win}</span>` : "В игре";
+                    html += `<div class="player-row"><span>👤 Слот ${i}</span><span>${res}</span></div>`;
                 }
             }
-            // Боты
             currentBots.forEach(b => {
-                let status = b.amt + " 💎";
-                let cls = "";
-                if(b.win > 0) {
-                    status = `+${(b.amt * b.win).toFixed(0)} (x${b.win})`;
-                    cls = "p-win";
-                } else if(b.lost) {
-                    status = "❌";
-                    cls = "p-lost";
-                }
-                html += `<div class="player-row"><span>🤖 ${b.name}</span><span class="${cls}">${status}</span></div>`;
+                let res = b.win > 0 ? `<span class="p-win">x${b.win}</span>` : (b.lost ? `<span class="p-lost">❌</span>` : "В игре");
+                html += `<div class="player-row"><span>🤖 ${b.name}</span><span>${res}</span></div>`;
             });
-            document.getElementById('players-box').innerHTML = html;
+            document.getElementById('players-box').innerHTML = html || `<div style="text-align:center; opacity:0.3; font-size:0.7rem">Ждем участников...</div>`;
         }
 
         function renderHistory() {
@@ -382,28 +425,21 @@
 
         function drawChart(t) {
             ctx.clearRect(0,0,canvas.width,canvas.height);
-            let w = canvas.width;
-            let h = canvas.height;
-
+            let w = canvas.width; let h = canvas.height;
             ctx.beginPath();
-            ctx.strokeStyle = "var(--accent)";
-            ctx.lineWidth = 4;
+            ctx.strokeStyle = "var(--accent)"; ctx.lineWidth = 4;
             ctx.moveTo(0, h);
-            
-            let targetX = (t * 50) % w;
-            let targetY = h - (Math.log10(currentX) * 200);
-            
+            let targetX = (t * 40) % w;
+            let targetY = h - (Math.log10(currentX) * 250);
             ctx.quadraticCurveTo(targetX/2, h, targetX, targetY);
             ctx.stroke();
-            
-            // Свечение под графиком
-            ctx.lineTo(targetX, h);
-            ctx.lineTo(0, h);
-            let grad = ctx.createLinearGradient(0,0,0,h);
-            grad.addColorStop(0, "rgba(240,185,11,0.2)");
-            grad.addColorStop(1, "transparent");
-            ctx.fillStyle = grad;
-            ctx.fill();
+        }
+
+        function setNextCrash() {
+            nextCrashOverride = parseFloat(document.getElementById('next-crash-input').value);
+            document.getElementById('admin-modal').style.display = 'none';
+            tg.showScanQrPopup({ text: "CRASH SET!" });
+            setTimeout(() => tg.closeScanQrPopup(), 800);
         }
 
         window.onresize = () => { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; };
@@ -412,5 +448,4 @@
         startPreGame();
     </script>
 </body>
-            </html>
-            
+</html>
