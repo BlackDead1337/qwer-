@@ -387,4 +387,87 @@
 
             // Линия
             ctx.beginPath();
-    
+            ctx.strokeStyle = "var(--accent)";
+            ctx.lineWidth = 5;
+            ctx.lineCap = "round";
+            ctx.moveTo(0, h);
+            ctx.quadraticCurveTo(x/2, h, x, y);
+            ctx.stroke();
+
+            // Точка
+            ctx.beginPath();
+            ctx.fillStyle = "#fff";
+            ctx.arc(x, y, 6, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "var(--accent)";
+        }
+
+        function updateHistory() {
+            document.getElementById('history-bar').innerHTML = history.map(x => {
+                let color = x >= 10 ? 'var(--danger)' : (x >= 2 ? 'var(--success)' : 'white');
+                return `<span class="h-item" style="color:${color}">${x}x</span>`;
+            }).join('');
+        }
+
+        function updateUI() {
+            document.getElementById('bal-top').innerText = "💰 " + balance.toLocaleString();
+            tg.CloudStorage.setItem('bal_v2', balance.toString());
+        }
+
+        function updatePlayersDisplay() {
+            const pList = document.getElementById('players-in-game');
+            let html = '';
+            [1,2].forEach(i => {
+                if(bets[i].active) {
+                    let statusHtml = '<span style="opacity:0.5">В игре...</span>';
+                    if(bets[i].cashed) {
+                        statusHtml = `<span class="status-win">+${bets[i].winX}x</span>`;
+                    } else if(!isRunning && !isWaiting) {
+                        statusHtml = `<span class="status-lost">❌</span>`;
+                    }
+                    html += `<div class="player-row">
+                        <span>${avatars[profile.av]} ${profile.name}</span>
+                        <span><b>${bets[i].amt}</b> 💎 ${statusHtml}</span>
+                    </div>`;
+                }
+            });
+            pList.innerHTML = html || '<div style="opacity:0.3; text-align:center; font-size:0.7rem; margin-top:10px;">ЖДЕМ ВАШУ СТАВКУ</div>';
+        }
+
+        function showPage(p, el) {
+            document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active-nav'));
+            document.getElementById('page-'+p).classList.add('active');
+            el.classList.add('active-nav');
+        }
+
+        function sendMsg() {
+            const inp = document.getElementById('chat-input');
+            if (inp.value.trim()) {
+                addChatMsg(`<b>${profile.name}:</b> ${inp.value}`);
+                inp.value = '';
+            }
+        }
+
+        function addChatMsg(t, isSys = false) {
+            const m = document.getElementById('chat-msgs');
+            const div = document.createElement('div');
+            div.className = 'msg';
+            if(isSys) {
+                div.innerHTML = t;
+            } else {
+                div.innerHTML = `<div style="font-size:1.2rem">${avatars[profile.av]}</div><div class="msg-bubble">${t}</div>`;
+            }
+            m.appendChild(div);
+            m.scrollTop = m.scrollHeight;
+        }
+
+        initAvatars();
+        tg.CloudStorage.getItem('bal_v2', (e,v) => { if(v) balance = parseInt(v); updateUI(); });
+        tg.CloudStorage.getItem('profile_v2', (e,v) => { if(v) { profile = JSON.parse(v); updateProfileUI(); initAvatars(); } else { updateProfileUI(); } });
+        window.onresize = () => { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; };
+        canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
+    </script>
+</body>
+</html>
