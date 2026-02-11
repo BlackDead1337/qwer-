@@ -7,7 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --bg: linear-gradient(180deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            --bg: linear-gradient(180deg, #0a0a1a 0%, #1a1a3a 100%);
             --card: rgba(255, 255, 255, 0.08);
             --accent: #f0b90b;
             --success: #00ff88;
@@ -15,119 +15,132 @@
             --text: #ffffff;
         }
 
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            background: var(--bg); 
-            color: var(--text); 
-            margin: 0; 
-            display: flex; 
-            flex-direction: column; 
-            height: 100vh; 
-            overflow: hidden;
-        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
         /* Шапка и История */
-        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(0,0,0,0.2); }
-        #history-bar { display: flex; gap: 5px; padding: 5px 10px; overflow-x: hidden; background: rgba(0,0,0,0.3); font-size: 0.7rem; height: 25px; align-items: center; }
-        .h-item { padding: 2px 6px; border-radius: 4px; background: var(--card); font-weight: bold; }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(255,255,255,0.1); }
+        #history-bar { display: flex; gap: 6px; padding: 8px 15px; overflow-x: auto; background: rgba(0,0,0,0.2); font-size: 0.8rem; scrollbar-width: none; }
+        .h-item { padding: 3px 8px; border-radius: 6px; background: var(--card); font-weight: bold; min-width: 40px; text-align: center; }
 
         /* Экраны */
         .page { display: none; flex-direction: column; flex-grow: 1; padding: 12px; overflow-y: auto; }
         .active { display: flex; }
 
         /* Игровая зона */
-        .crash-area { position: relative; height: 35vh; background: rgba(0,0,0,0.4); border-radius: 24px; margin-bottom: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
-        #multiplier { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 4rem; font-weight: 900; z-index: 5; text-shadow: 0 0 30px rgba(0,0,0,0.8);
-        }
-        #timer-display { position: absolute; top: 10px; width: 100%; text-align: center; color: var(--accent); font-weight: bold; font-size: 1.2rem; }
+        .crash-area { position: relative; height: 32vh; background: rgba(0,0,0,0.5); border-radius: 24px; margin-bottom: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+        #multiplier { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4.5rem; font-weight: 900; z-index: 5; text-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        #timer-display { position: absolute; top: 15px; width: 100%; text-align: center; color: var(--accent); font-weight: bold; font-size: 1.1rem; letter-spacing: 1px; }
         canvas { width: 100%; height: 100%; }
 
-        /* Ставки и Игроки */
+        /* Ставки */
         .bet-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .bet-card { background: var(--card); padding: 12px; border-radius: 18px; display: flex; flex-direction: column; gap: 6px; }
-        input { background: rgba(0,0,0,0.4); border: 1px solid #444; color: white; padding: 10px; border-radius: 10px; text-align: center; }
-        .main-btn { border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .bet-card { background: var(--card); padding: 12px; border-radius: 18px; display: flex; flex-direction: column; gap: 8px; border: 1px solid rgba(255,255,255,0.03); }
+        .input-group { display: flex; flex-direction: column; gap: 2px; }
+        .input-label { font-size: 0.6rem; opacity: 0.5; padding-left: 5px; }
+        input { background: rgba(0,0,0,0.4); border: 1px solid #444; color: white; padding: 10px; border-radius: 10px; text-align: center; font-size: 0.9rem; }
+        .main-btn { border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
         .btn-play { background: var(--success); color: #000; }
         .btn-stop { background: var(--accent); color: #000; }
-        
-        .players-list { margin-top: 10px; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 10px; flex-grow: 1; font-size: 0.8rem; overflow-y: auto; }
-        .player-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .btn-share { background: #3498db; color: white; margin-top: 5px; font-size: 0.7rem; padding: 5px; display: none; }
 
-        /* Кликер */
-        .clicker-box { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
-        .coin-wrap { position: relative; }
-        .coin { 
-            width: 180px; height: 180px; background: radial-gradient(circle, #f0b90b, #8a6d00); 
-            border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-            font-size: 60px; cursor: pointer; box-shadow: 0 0 50px rgba(240, 185, 11, 0.4);
-            border: 8px solid rgba(255,255,255,0.2); transition: transform 0.05s;
-        }
-        .coin:active { transform: scale(0.92); }
+        /* Игроки */
+        .players-list { margin-top: 10px; background: rgba(0,0,0,0.3); border-radius: 15px; padding: 12px; flex-grow: 1; font-size: 0.8rem; overflow-y: auto; }
+        .player-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center; }
+        .p-avatar { width: 20px; height: 20px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
 
         /* Чат */
-        .chat-box { flex-grow: 1; display: flex; flex-direction: column; height: 80%; }
-        .messages { flex-grow: 1; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 15px; padding: 12px; margin-bottom: 10px; }
-        .chat-input-area { display: flex; gap: 8px; }
-        .chat-input-area input { flex-grow: 1; text-align: left; }
+        .messages { flex-grow: 1; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 20px; padding: 15px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 12px; }
+        .msg { display: flex; align-items: flex-start; gap: 10px; animation: fadeIn 0.3s ease; }
+        .msg-content { background: rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 12px; font-size: 0.9rem; max-width: 80%; }
+        .msg-win { border: 1px solid var(--success); background: rgba(0, 255, 136, 0.1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Кликер */
+        .coin { width: 180px; height: 180px; background: radial-gradient(circle, #f0b90b, #b38a00); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 60px; cursor: pointer; box-shadow: 0 0 50px rgba(240, 185, 11, 0.3); border: 8px solid rgba(255,255,255,0.15); }
+
+        /* Меню Overlay */
+        #menu-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; padding: 30px; align-items: center; }
+        .avatar-select { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
+        .av-opt { width: 50px; height: 50px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+        .av-opt.selected { border-color: var(--accent); transform: scale(1.1); }
 
         /* Хотбар */
-        .hotbar { display: grid; grid-template-columns: 1fr 1fr 1fr; background: #0b0e11; padding: 12px 0 30px; border-top: 1px solid rgba(255,255,255,0.1); }
-        .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 0.75rem; opacity: 0.4; transition: 0.3s; }
+        .hotbar { display: grid; grid-template-columns: 1fr 1fr 1fr; background: #07070f; padding: 12px 0 35px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; font-size: 0.7rem; opacity: 0.4; transition: 0.3s; }
         .nav-item.active-nav { opacity: 1; color: var(--accent); }
-        .nav-item i { font-size: 1.5rem; margin-bottom: 4px; }
     </style>
 </head>
 <body>
 
+    <div id="menu-overlay">
+        <h2>НАСТРОЙКИ ПРОФИЛЯ</h2>
+        <input type="text" id="name-input" placeholder="Введите ник" style="width: 80%; margin-top: 20px;">
+        <div class="avatar-select" id="av-list"></div>
+        <button class="main-btn btn-play" style="width: 80%;" onclick="saveProfile()">СОХРАНИТЬ</button>
+        <p style="margin-top:40px; opacity:0.6; font-size:0.8rem;">Создатель: <a href="https://t.me/blackdead1337" style="color:var(--accent)">@blackdead1337</a></p>
+        <button class="main-btn btn-stop" style="margin-top:20px;" onclick="closeMenu()">ЗАКРЫТЬ</button>
+    </div>
+
     <div id="history-bar"></div>
 
     <div class="top-nav">
-        <div id="bal-top">💰 1000</div>
-        <button style="background:none; border:none; color:white; font-size:20px;" onclick="tg.showAlert('Создатель: @blackdead1337')">☰</button>
-    </div>
-
-    <div id="page-clicker" class="page">
-        <div class="clicker-box">
-            <div class="coin" onclick="clickCoin()">💎</div>
-            <h2 id="click-status">Жми и богатей!</h2>
-            <p style="opacity:0.6">Шанс 50% на 1,000 монет!</p>
+        <div id="bal-top">💰 1,000</div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <img id="my-av-top" class="p-avatar" src="">
+            <button style="background:none; border:none; color:white; font-size:24px;" onclick="openMenu()">☰</button>
         </div>
     </div>
 
     <div id="page-game" class="page active">
-        <div class="crash-area" id="shake-target">
-            <div id="timer-display">Ожидание ставок...</div>
+        <div class="crash-area">
+            <div id="timer-display">Ожидание...</div>
             <div id="multiplier">1.00x</div>
             <canvas id="chart"></canvas>
         </div>
         
         <div class="bet-row">
             <div class="bet-card">
-                <input type="number" id="amt1" value="10">
-                <input type="number" id="auto1" value="2.0" step="0.1">
+                <div class="input-group">
+                    <span class="input-label">СТАВКА</span>
+                    <input type="number" id="amt1" value="10">
+                </div>
+                <div class="input-group">
+                    <span class="input-label">АВТОСТОП</span>
+                    <input type="number" id="auto1" value="2.0" step="0.1">
+                </div>
                 <button id="btn1" class="main-btn btn-play" onclick="toggleBet(1)">СТАВКА 1</button>
+                <button id="share1" class="main-btn btn-share" onclick="shareWin(1)">ПОДЕЛИТЬСЯ ИКСОМ</button>
             </div>
             <div class="bet-card">
-                <input type="number" id="amt2" value="10">
-                <input type="number" id="auto2" value="5.0" step="0.1">
+                <div class="input-group">
+                    <span class="input-label">СТАВКА</span>
+                    <input type="number" id="amt2" value="10">
+                </div>
+                <div class="input-group">
+                    <span class="input-label">АВТОСТОП</span>
+                    <input type="number" id="auto2" value="5.0" step="0.1">
+                </div>
                 <button id="btn2" class="main-btn btn-play" onclick="toggleBet(2)">СТАВКА 2</button>
+                <button id="share2" class="main-btn btn-share" onclick="shareWin(2)">ПОДЕЛИТЬСЯ ИКСОМ</button>
             </div>
         </div>
 
-        <div class="players-list" id="players-in-game">
-            <div style="opacity:0.5; text-align:center;">Ставок пока нет</div>
+        <div class="players-list" id="players-in-game"></div>
+    </div>
+
+    <div id="page-clicker" class="page">
+        <div class="clicker-box" style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex-grow:1; gap:20px;">
+            <div class="coin" onclick="clickCoin()">💎</div>
+            <h2 id="click-status">Нажми на удачу!</h2>
+            <p style="opacity:0.5; font-size:0.8rem;">Шанс 50% сорвать 1,000 монет</p>
         </div>
     </div>
 
     <div id="page-chat" class="page">
-        <div class="chat-box">
-            <div id="chat-msgs" class="messages"></div>
-            <div class="chat-input-area">
-                <input type="text" id="chat-input" placeholder="Ваше сообщение...">
-                <button class="main-btn btn-play" style="padding:10px 20px" onclick="sendMsg()">📡</button>
-            </div>
+        <div class="messages" id="chat-msgs"></div>
+        <div style="display:flex; gap:8px;">
+            <input type="text" id="chat-input" placeholder="Написать сообщение..." style="flex-grow:1; text-align:left;">
+            <button class="main-btn btn-play" onclick="sendMsg()">📡</button>
         </div>
     </div>
 
@@ -141,6 +154,13 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
+        // Профиль
+        let profile = { name: "Игрок", av: 1 };
+        const avatars = [
+            "🐙", "🐱", "🐶", "🐻", "🐸", "🐺", "🦊", "🦁"
+        ];
+        
+        // Игровые данные
         let balance = 1000;
         let isRunning = false;
         let isWaiting = false;
@@ -148,22 +168,49 @@
         let currentX = 1.00;
         let crashPoint = 0;
         let history = [];
-        let bets = { 1: {active: false, amt: 0, auto: 0, cashed: false}, 2: {active: false, amt: 0, auto: 0, cashed: false} };
+        let bets = { 1: {active: false, amt: 0, auto: 0, cashed: false, lastWinX: 0}, 2: {active: false, amt: 0, auto: 0, cashed: false, lastWinX: 0} };
 
         const canvas = document.getElementById('chart');
         const ctx = canvas.getContext('2d');
         const multiDisp = document.getElementById('multiplier');
-        const timerDisp = document.getElementById('timer-display');
 
-        function res() { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; }
-        window.onresize = res; res();
+        function initAvatars() {
+            const list = document.getElementById('av-list');
+            avatars.forEach((av, i) => {
+                let div = document.createElement('div');
+                div.className = `av-opt ${profile.av === i ? 'selected' : ''}`;
+                div.innerHTML = `<span style="font-size:30px">${av}</span>`;
+                div.onclick = () => {
+                    profile.av = i;
+                    document.querySelectorAll('.av-opt').forEach(el => el.classList.remove('selected'));
+                    div.classList.add('selected');
+                };
+                list.appendChild(div);
+            });
+        }
 
-        // --- КЛИКЕР ---
+        function openMenu() { document.getElementById('menu-overlay').style.display = 'flex'; document.getElementById('name-input').value = profile.name; }
+        function closeMenu() { document.getElementById('menu-overlay').style.display = 'none'; }
+        
+        function saveProfile() {
+            profile.name = document.getElementById('name-input').value || "Игрок";
+            tg.CloudStorage.setItem('profile', JSON.stringify(profile));
+            updateProfileUI();
+            closeMenu();
+        }
+
+        function updateProfileUI() {
+            document.getElementById('my-av-top').innerText = avatars[profile.av];
+            // Имитация аватарки через Emoji (так как у нас нет внешних ссылок)
+            document.getElementById('my-av-top').outerHTML = `<span id="my-av-top" class="p-avatar" style="font-size:20px">${avatars[profile.av]}</span>`;
+        }
+
+        // КЛИКЕР
         function clickCoin() {
-            tg.HapticFeedback.impactOccurred('rigid');
+            tg.HapticFeedback.impactOccurred('heavy');
             if (Math.random() < 0.5) {
-                balance += 1000;
-                document.getElementById('click-status').innerText = "+1,000 МОНЕТ! 🎉";
+                balance += 100000;
+                document.getElementById('click-status').innerText = "Бонус +100,000! 💎";
                 document.getElementById('click-status').style.color = "var(--success)";
             } else {
                 balance += 1;
@@ -173,20 +220,16 @@
             updateUI();
         }
 
-        // --- ЛОГИКА ОЖИДАНИЯ ---
+        // ИГРА
         function startWaiting() {
             if (isWaiting || isRunning) return;
             isWaiting = true;
             waitTime = 30;
-            
-            // Генерируем фейковых игроков для массовки
-            const pList = document.getElementById('players-in-game');
-            pList.innerHTML = '<div class="player-row"><span>Вы (ожидание)</span><span>...</span></div>';
+            updatePlayersDisplay();
 
             const timer = setInterval(() => {
                 waitTime--;
-                timerDisp.innerText = `Начало через ${waitTime}с`;
-                
+                document.getElementById('timer-display').innerText = `СТАРТ ЧЕРЕЗ ${waitTime}с`;
                 if (waitTime <= 0) {
                     clearInterval(timer);
                     isWaiting = false;
@@ -197,32 +240,18 @@
 
         function toggleBet(i) {
             if (isRunning) { cashOut(i); return; }
-            
             let a = parseInt(document.getElementById('amt'+i).value);
-            if (a > balance || a <= 0) { tg.showAlert("Недостаточно монет!"); return; }
+            if (a > balance || a <= 0) { tg.showAlert("Мало денег!"); return; }
 
             bets[i].active = !bets[i].active;
-            const btn = document.getElementById('btn'+i);
-            btn.style.boxShadow = bets[i].active ? "0 0 15px var(--success)" : "none";
-            btn.innerText = bets[i].active ? "ОТМЕНИТЬ" : "СТАВКА "+i;
+            document.getElementById('btn'+i).innerText = bets[i].active ? "ОТМЕНА" : "СТАВКА "+i;
+            document.getElementById('btn'+i).style.background = bets[i].active ? "var(--danger)" : "var(--success)";
+            document.getElementById('share'+i).style.display = "none";
 
             if (!isRunning && !isWaiting) startWaiting();
             updatePlayersDisplay();
         }
 
-        function updatePlayersDisplay() {
-            const pList = document.getElementById('players-in-game');
-            pList.innerHTML = '';
-            [1,2].forEach(i => {
-                if(bets[i].active) {
-                    pList.innerHTML += `<div class="player-row"><span>Ставка #${i}</span><span>${document.getElementById('amt'+i).value} 💎</span></div>`;
-                }
-            });
-            // Добавим фейкового бота
-            pList.innerHTML += `<div class="player-row" style="opacity:0.4"><span>LuckyJoe_bot</span><span>500 💎</span></div>`;
-        }
-
-        // --- ЯДРО ИГРЫ ---
         function runGame() {
             let ready = false;
             [1, 2].forEach(i => {
@@ -237,12 +266,12 @@
                 }
             });
 
-            if (!ready) { timerDisp.innerText = "Ожидание ставок..."; return; }
+            if (!ready) { document.getElementById('timer-display').innerText = "Ожидание ставок..."; return; }
 
             isRunning = true;
-            timerDisp.innerText = "ИГРА ИДЕТ!";
-            crashPoint = (0.98 / (1 - Math.random())).toFixed(2);
-            if (Math.random() < 0.03) crashPoint = 1.00; // Моментальный слив
+            document.getElementById('timer-display').innerText = "ВЗЛЕТ! 🚀";
+            crashPoint = (0.99 / (1 - Math.random())).toFixed(2);
+            if(Math.random() < 0.05) crashPoint = 1.00;
 
             currentX = 1.00;
             let start = Date.now();
@@ -250,35 +279,23 @@
             function loop() {
                 if (!isRunning) return;
                 let t = (Date.now() - start) / 1000;
-                
-                // Прогрессивная скорость: чем выше икс, тем быстрее растет
-                let speed = 0.08;
+                let speed = 0.07;
                 if (currentX > 5) speed = 0.12;
-                if (currentX > 8) speed = 0.18;
-                if (currentX > 15) speed = 0.25;
+                if (currentX > 15) speed = 0.22;
                 
                 currentX = Math.pow(1 + speed, t * 5);
-                
                 multiDisp.innerText = currentX.toFixed(2) + "x";
-                updateMultiplierColor();
+                multiDisp.style.color = currentX < 2 ? "white" : (currentX < 10 ? "var(--accent)" : "var(--danger)");
 
-                // Автостоп
                 [1,2].forEach(i => {
                     if (bets[i].active && !bets[i].cashed && currentX >= bets[i].auto) cashOut(i);
                 });
 
                 draw(t);
-
                 if (currentX >= crashPoint) finish();
                 else requestAnimationFrame(loop);
             }
             requestAnimationFrame(loop);
-        }
-
-        function updateMultiplierColor() {
-            if (currentX < 2) multiDisp.style.color = "#fff";
-            else if (currentX < 10) multiDisp.style.color = varColor('--accent');
-            else multiDisp.style.color = varColor('--danger');
         }
 
         function cashOut(i) {
@@ -286,10 +303,11 @@
                 let win = Math.floor(bets[i].amt * currentX);
                 balance += win;
                 bets[i].cashed = true;
+                bets[i].lastWinX = currentX.toFixed(2);
                 document.getElementById('btn'+i).innerText = "ВЗЯТО!";
                 document.getElementById('btn'+i).className = "main-btn btn-play";
+                document.getElementById('share'+i).style.display = "block";
                 tg.HapticFeedback.notificationOccurred('success');
-                addChatMsg(`🚀 Ставка ${i} затащила x${currentX.toFixed(2)}!`);
                 updateUI();
             }
         }
@@ -307,34 +325,48 @@
                 bets[i].active = false;
                 document.getElementById('btn'+i).innerText = "СТАВКА " + i;
                 document.getElementById('btn'+i).className = "main-btn btn-play";
-                document.getElementById('btn'+i).style.boxShadow = "none";
             });
-            
             updateUI();
-            setTimeout(startWaiting, 2000); // Автозапуск нового раунда
+            setTimeout(startWaiting, 2000);
         }
 
-        // --- ВСПОМОГАТЕЛЬНЫЕ ---
+        function shareWin(i) {
+            let x = bets[i].lastWinX;
+            let winAmt = Math.floor(parseInt(document.getElementById('amt'+i).value) * x);
+            addChatMsg(`<div class="msg-content msg-win">💎 <b>${profile.name}</b> поделился победой!<br>Поймал <b>x${x}</b> и выиграл <b>${winAmt.toLocaleString()}</b>!</div>`, true);
+            document.getElementById('share'+i).style.display = "none";
+            showPage('chat', document.querySelectorAll('.nav-item')[2]);
+        }
+
         function draw(t) {
             ctx.clearRect(0,0,canvas.width,canvas.height);
             ctx.beginPath();
-            ctx.strokeStyle = varColor('--accent');
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent');
             ctx.lineWidth = 5;
             ctx.moveTo(0, canvas.height);
             let x = (t * 40) % canvas.width;
-            let y = canvas.height - (Math.log10(currentX) * 180);
+            let y = canvas.height - (Math.log10(currentX) * 160);
             ctx.quadraticCurveTo(x/2, canvas.height, x, y);
             ctx.stroke();
         }
 
         function updateHistory() {
-            const bar = document.getElementById('history-bar');
-            bar.innerHTML = history.map(x => `<span class="h-item" style="color:${x > 2 ? 'var(--success)' : 'white'}">${x}x</span>`).join('');
+            document.getElementById('history-bar').innerHTML = history.map(x => `<span class="h-item" style="color:${x > 2 ? 'var(--success)' : 'white'}">${x}x</span>`).join('');
         }
 
         function updateUI() {
             document.getElementById('bal-top').innerText = "💰 " + balance.toLocaleString();
             tg.CloudStorage.setItem('bal', balance.toString());
+        }
+
+        function updatePlayersDisplay() {
+            const pList = document.getElementById('players-in-game');
+            pList.innerHTML = '<div style="opacity:0.5; text-align:center; font-size:0.7rem;">ОЖИДАНИЕ ИГРОКОВ...</div>';
+            let html = '';
+            [1,2].forEach(i => {
+                if(bets[i].active) html += `<div class="player-row"><span>${avatars[profile.av]} ${profile.name}</span><span>${document.getElementById('amt'+i).value} 💎</span></div>`;
+            });
+            if(html) pList.innerHTML = html;
         }
 
         function showPage(p, el) {
@@ -347,21 +379,30 @@
         function sendMsg() {
             const inp = document.getElementById('chat-input');
             if (inp.value.trim()) {
-                addChatMsg(`<b>Вы:</b> ${inp.value}`);
+                addChatMsg(`<b>${profile.name}:</b> ${inp.value}`);
                 inp.value = '';
             }
         }
 
-        function addChatMsg(t) {
+        function addChatMsg(t, isSystem = false) {
             const m = document.getElementById('chat-msgs');
-            m.innerHTML += `<div class="msg">${t}</div>`;
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'msg';
+            if (isSystem) {
+                msgDiv.innerHTML = t;
+            } else {
+                msgDiv.innerHTML = `<span>${avatars[profile.av]}</span><div class="msg-content">${t}</div>`;
+            }
+            m.appendChild(msgDiv);
             m.scrollTop = m.scrollHeight;
         }
 
-        function varColor(n) { return getComputedStyle(document.documentElement).getPropertyValue(n); }
-
+        // Загрузка
+        initAvatars();
         tg.CloudStorage.getItem('bal', (e,v) => { if(v) balance = parseInt(v); updateUI(); });
+        tg.CloudStorage.getItem('profile', (e,v) => { if(v) { profile = JSON.parse(v); updateProfileUI(); } else { updateProfileUI(); } });
+        window.onresize = () => { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; };
     </script>
 </body>
                     </html>
-        
+                    
